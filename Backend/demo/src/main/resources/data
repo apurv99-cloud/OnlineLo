@@ -1,0 +1,8 @@
+INSERT INTO product (id, name, brand, price, category, release_date, product_available, stock_quality) VALUES
+(1, 'iPhone 15', 'Apple', 79999, 'Smartphone', '2023-09-22', true, 50),
+(2, 'Galaxy S23', 'Samsung', 74999, 'Smartphone', '2023-02-17', true, 40),
+(3, 'MacBook Air M2', 'Apple', 119999, 'Laptop', '2022-07-15', true, 25),
+(4, 'Inspiron 15', 'Dell', 55999, 'Laptop', '2023-01-10', true, 30),
+(5, 'Sony WH-1000XM5', 'Sony', 29999, 'Headphones', '2022-05-12', true, 60),
+(6, 'iPad Air', 'Apple', 59999, 'Tablet', '2022-03-18', true, 35),
+(7, 'Boat Rockerz 450', 'Boat', 1999, 'Headphones', '2021-11-05', false, 0);

@@ -103,7 +103,7 @@ const AddProduct = () => {
           description: "",
           price: "",
           category: "",
-          stockQuantity: "",
+          stockQuality: "",
           releaseDate: "",
           productAvailable: false,
         });
@@ -201,13 +201,13 @@ const AddProduct = () => {
           <label>Stock Quantity</label>
           <input
             type="number"
-            name="stockQuantity"
+            name="stockQuality"
             className="form-control"
-            value={product.stockQuantity}
+            value={product.stockQuality}
             onChange={handleInputChange}
           />
-          {errors.stockQuantity && (
-            <div className="text-danger">{errors.stockQuantity}</div>
+          {errors.stockQuality && (
+            <div className="text-danger">{errors.stockQuality}</div>
           )}
         </div>
 

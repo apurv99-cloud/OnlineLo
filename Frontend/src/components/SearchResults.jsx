@@ -102,9 +102,9 @@ const SearchResults = () => {
                       <button 
                         className="btn btn-primary btn-sm"
                         onClick={() => handleAddToCart(product.id)}
-                        disabled={!product.productAvailable || product.stockQuantity <= 0}
+                        disabled={!product.productAvailable || product.stockQuality <= 0}
                       >
-                        {product.productAvailable && product.stockQuantity > 0
+                        {product.productAvailable && product.stockQuality > 0
                           ? "Add to Cart"
                           : "Out of Stock"}
                       </button>

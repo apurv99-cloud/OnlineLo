@@ -16,7 +16,7 @@ const UpdateProduct = () => {
     category: "",
     releaseDate: "",
     productAvailable: false,
-    stockQuantity: "",
+    stockQuality: "",
   });
 
   const [imageChanged, setImageChanged] = useState(false);
@@ -237,14 +237,14 @@ const UpdateProduct = () => {
                     type="number"
                     className={`form-control ${validated && errors.stockQuantity ? 'is-invalid' : ''}`}
                     onChange={handleChange}
-                    placeholder={product.stockQuantity}
-                    value={updateProduct.stockQuantity}
-                    name="stockQuantity"
-                    id="stockQuantity"
+                    placeholder={product.stockQuality}
+                    value={updateProduct.stockQuality}
+                    name="stockQuality"
+                    id="stockQuality"
                     min="0"
                     required
                   />
-                  {errors.stockQuantity && <div className="invalid-feedback">{errors.stockQuantity}</div>}
+                  {errors.stockQuality && <div className="invalid-feedback">{errors.stockQuality}</div>}
                 </div>
                 
                 <div className="col-md-6">

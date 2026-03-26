@@ -1,10 +1,9 @@
-import axios from "axios";
+import API from "../axios"; // ✅ FIX
 import React, { useState } from "react";
 import { Modal, Button, Form, Toast, ToastContainer } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 
 const CheckoutPopup = ({ show, handleClose, cartItems, totalPrice }) => {
-  const baseUrl = import.meta.env.VITE_BASE_URL;
   const navigate = useNavigate();
 
   const [name, setName] = useState("");
@@ -51,7 +50,7 @@ const CheckoutPopup = ({ show, handleClose, cartItems, totalPrice }) => {
     };
 
     try {
-      await axios.post(`${baseUrl}/api/orders/place`, data);
+      await API.post("/orders/place", data); // ✅ FIX
 
       setToastVariant("success");
       setToastMessage("Order placed successfully!");
@@ -66,7 +65,7 @@ const CheckoutPopup = ({ show, handleClose, cartItems, totalPrice }) => {
       console.error(error);
 
       setToastVariant("danger");
-      setToastMessage("Failed to place order. Please try again.");
+      setToastMessage("Failed to place order");
       setShowToast(true);
     } finally {
       setIsSubmitting(false);
@@ -82,97 +81,65 @@ const CheckoutPopup = ({ show, handleClose, cartItems, totalPrice }) => {
 
         <Form noValidate validated={validated} onSubmit={handleConfirm}>
           <Modal.Body style={{ maxHeight: "60vh", overflowY: "auto" }}>
-            {/* Products */}
-            <div className="mb-4">
-              <h5 className="mb-3">Order Summary</h5>
+            <h5 className="mb-3">Order Summary</h5>
 
-              {cartItems.map((item) => (
-                <div
-                  key={item.id}
-                  className="d-flex align-items-center mb-3 p-2 border rounded"
-                >
-                  <img
-                    src={convertBase64ToDataURL(item.imageData)}
-                    alt={item.name}
-                    className="me-3 rounded"
-                    style={{
-                      width: "70px",
-                      height: "70px",
-                      objectFit: "cover",
-                    }}
-                  />
-
-                  <div className="flex-grow-1">
-                    <h6 className="mb-1">{item.name}</h6>
-                    <small className="text-muted">Qty: {item.quantity}</small>
-                  </div>
-
-                  <div className="fw-bold">
-                    ₹{(item.price * item.quantity).toFixed(2)}
-                  </div>
+            {cartItems.map((item) => (
+              <div
+                key={item.id}
+                className="d-flex align-items-center mb-3 border p-2 rounded"
+              >
+                <img
+                  src={convertBase64ToDataURL(item.imageData)}
+                  width="70"
+                  height="70"
+                  className="me-3"
+                />
+                <div className="flex-grow-1">
+                  <h6>{item.name}</h6>
+                  <small>Qty: {item.quantity}</small>
                 </div>
-              ))}
+                <div>₹{(item.price * item.quantity).toFixed(2)}</div>
+              </div>
+            ))}
+
+            <div className="d-flex justify-content-between mt-3">
+              <h5>Total</h5>
+              <h5>₹{totalPrice.toFixed(2)}</h5>
             </div>
 
-            {/* Total */}
-            <div className="d-flex justify-content-between align-items-center mb-4 border-top pt-3">
-              <h5>Total Amount:</h5>
-              <h5 className="fw-bold text-primary">₹{totalPrice.toFixed(2)}</h5>
-            </div>
-
-            {/* Name */}
-            <Form.Group className="mb-3">
+            <Form.Group className="mt-3">
               <Form.Label>Name</Form.Label>
               <Form.Control
-                type="text"
-                placeholder="Enter your name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
               />
-              <Form.Control.Feedback type="invalid">
-                Please provide your name.
-              </Form.Control.Feedback>
             </Form.Group>
 
-            {/* Email */}
-            <Form.Group className="mb-3">
+            <Form.Group className="mt-3">
               <Form.Label>Email</Form.Label>
               <Form.Control
                 type="email"
-                placeholder="Enter your email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
-              <Form.Control.Feedback type="invalid">
-                Please provide a valid email.
-              </Form.Control.Feedback>
             </Form.Group>
           </Modal.Body>
 
           <Modal.Footer>
-            <Button
-              variant="outline-secondary"
-              onClick={handleClose}
-              disabled={isSubmitting}
-            >
+            <Button onClick={handleClose} disabled={isSubmitting}>
               Cancel
             </Button>
 
-            <Button variant="primary" type="submit" disabled={isSubmitting}>
+            <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? "Processing..." : "Confirm Order"}
             </Button>
           </Modal.Footer>
         </Form>
       </Modal>
 
-      {/* Toast */}
-      <ToastContainer
-        position="top-end"
-        className="p-3"
-        style={{ zIndex: 2000 }}
-      >
+      <ToastContainer position="top-end" className="p-3">
         <Toast
           show={showToast}
           onClose={() => setShowToast(false)}
@@ -181,9 +148,8 @@ const CheckoutPopup = ({ show, handleClose, cartItems, totalPrice }) => {
           bg={toastVariant}
         >
           <Toast.Header>
-            <strong className="me-auto">Order Status</strong>
+            <strong>Order Status</strong>
           </Toast.Header>
-
           <Toast.Body className="text-white">{toastMessage}</Toast.Body>
         </Toast>
       </ToastContainer>

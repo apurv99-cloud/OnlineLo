@@ -1,150 +1,121 @@
-import { useNavigate, useParams } from "react-router-dom";
-import { useContext, useEffect } from "react";
-import { useState } from "react";
-import AppContext from "../Context/Context";
-import axios from "../axios";
-import { toast } from "react-toastify";
+import API from "../axios"; // ✅ FIX
+import React, { useEffect, useState } from "react";
 
-const Product = () => {
-  const { id } = useParams();
-  const { data, addToCart, removeFromCart, cart, refreshData } = useContext(AppContext);
-  const [product, setProduct] = useState(null);
-  const [imageUrl, setImageUrl] = useState("");
-  const navigate = useNavigate();
-  const baseUrl = import.meta.env.VITE_BASE_URL;
+const Order = () => {
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [expandedOrder, setExpandedOrder] = useState(null);
 
   useEffect(() => {
-    const fetchProduct = async () => {
+    const fetchOrders = async () => {
       try {
-        const response = await axios.get(
-          `${baseUrl}/api/product/${id}`
-        );
-        setProduct(response.data);
-        console.log(response.data);
-        if (response.data.imageName) {
-          fetchImage();
-        }
+        const response = await API.get("/orders"); // ✅ FIX
+        setOrders(response.data);
       } catch (error) {
-        console.error("Error fetching product:", error);
+        console.log(error);
+        setError("Failed to fetch orders");
+      } finally {
+        setLoading(false);
       }
     };
 
-    const fetchImage = async () => {
-      const response = await axios.get(
-        `${baseUrl}/api/product/${id}/image`,
-        { responseType: "blob" }
-      );
-      setImageUrl(URL.createObjectURL(response.data));
-    };
-    fetchProduct();
-  }, [id]);
+    fetchOrders();
+  }, []);
 
-  const deleteProduct = async () => {
-    try {
-      await axios.delete(`${baseUrl}/api/product/${id}`);
-      removeFromCart(id);
-      console.log("Product deleted successfully");
-      toast.success("Product deleted successfully");
-      refreshData();
-      navigate("/");
-    } catch (error) {
-      console.error("Error deleting product:", error);
+  const toggleOrderDetails = (orderId) => {
+    setExpandedOrder(expandedOrder === orderId ? null : orderId);
+  };
+
+  const getStatusClass = (status) => {
+    switch (status) {
+      case "PLACED":
+        return "bg-info";
+      case "SHIPPED":
+        return "bg-primary";
+      case "DELIVERED":
+        return "bg-success";
+      case "CANCELLED":
+        return "bg-danger";
+      default:
+        return "bg-secondary";
     }
   };
 
-  const handleEditClick = () => {
-    navigate(`/product/update/${id}`);
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+    }).format(amount);
   };
 
-  const handlAddToCart = () => {
-    addToCart(product);
-    toast.success("Product added to cart");
+  const calculateOrderTotal = (items) => {
+    return items.reduce((total, item) => total + item.totalPrice, 0);
   };
 
-  if (!product) {
-    return (
-      <div className="container mt-5 pt-5">
-        <div className="d-flex justify-content-center align-items-center" style={{ height: "400px" }}>
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Loading...</span>
-          </div>
-        </div>
-      </div>
-    );
+  if (loading) {
+    return <div className="text-center mt-5">Loading...</div>;
+  }
+
+  if (error) {
+    return <div className="alert alert-danger mt-5">{error}</div>;
   }
 
   return (
     <div className="container mt-5 pt-5">
-      <div className="row">
-        {/* Product Image */}
-        <div className="col-md-6 mb-4">
-          <div className="card border-0">
-            <img
-              src={imageUrl}
-              alt={product.name}
-              className="card-img-top img-fluid"
-              style={{ maxHeight: "500px", objectFit: "contain" }}
-            />
-          </div>
-        </div>
+      <h2 className="text-center mb-4">Orders</h2>
 
-        {/* Product Details */}
-        <div className="col-md-6">
-          <div className="d-flex justify-content-between align-items-center mb-2">
-            <span className="badge bg-secondary">{product.category}</span>
-            <small className="text-muted">
-              Listed: {new Date(product.releaseDate).toLocaleDateString()}
-            </small>
-          </div>
+      <div className="card shadow">
+        <div className="card-body p-0">
+          <table className="table table-hover">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Customer</th>
+                <th>Status</th>
+                <th>Total</th>
+                <th></th>
+              </tr>
+            </thead>
 
-          <h2 className="text-capitalize mb-1">{product.name}</h2>
-          <p className="text-muted fst-italic mb-4">~ {product.brand}</p>
+            <tbody>
+              {orders.map((order) => (
+                <React.Fragment key={order.orderId}>
+                  <tr>
+                    <td>{order.orderId}</td>
+                    <td>{order.customerName}</td>
+                    <td>
+                      <span className={`badge ${getStatusClass(order.status)}`}>
+                        {order.status}
+                      </span>
+                    </td>
+                    <td>{formatCurrency(calculateOrderTotal(order.items))}</td>
+                    <td>
+                      <button onClick={() => toggleOrderDetails(order.orderId)}>
+                        {expandedOrder === order.orderId ? "Hide" : "View"}
+                      </button>
+                    </td>
+                  </tr>
 
-          <div className="mb-4">
-            <h5 className="mb-2">Product Description:</h5>
-            <p>{product.description}</p>
-          </div>
-
-          <h3 className="fw-bold mb-3">₹ {product.price}</h3>
-
-          <div className="d-grid gap-2 mb-3">
-            <button
-              className="btn btn-primary btn-lg"
-              onClick={handlAddToCart}
-              disabled={!product.productAvailable || product.stockQuality == 0}
-            >
-              {product.stockQuality !== 0 ? "Add to Cart" : "Out of Stock"}
-            </button>
-          </div>
-
-          <p className="mb-4">
-            <span className="me-2">Stock Available:</span>
-            <span className="fw-bold text-success">{product.stockQuality}</span>
-          </p>
-
-          <div className="d-flex gap-2">
-            <button
-              className="btn btn-outline-primary"
-              type="button"
-              onClick={handleEditClick}
-            >
-              <i className="bi bi-pencil me-1"></i>
-              Update
-            </button>
-
-            <button
-              className="btn btn-outline-danger"
-              type="button"
-              onClick={deleteProduct}
-            >
-              <i className="bi bi-trash me-1"></i>
-              Delete
-            </button>
-          </div>
+                  {expandedOrder === order.orderId && (
+                    <tr>
+                      <td colSpan="5">
+                        {order.items.map((item, i) => (
+                          <div key={i}>
+                            {item.productName} x {item.quantity}
+                          </div>
+                        ))}
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
   );
 };
 
-export default Product;
+export default Order;

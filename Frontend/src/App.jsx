@@ -8,9 +8,12 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppProvider } from "./Context/Context";
 import UpdateProduct from "./components/UpdateProduct";
 import Order from "./components/Order";
-
 import SearchResults from "./components/SearchResults";
- 
+
+// 🔥 NEW IMPORTS
+import Login from "./components/Login";
+import Signup from "./components/Signup";
+
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import { ToastContainer } from "react-toastify";
@@ -20,23 +23,26 @@ function App() {
 
   const handleCategorySelect = (category) => {
     setSelectedCategory(category);
-    console.log("Selected category:", category);
   };
 
   return (
     <AppProvider>
       <BrowserRouter>
-        <ToastContainer autoClose={2000}
-          hideProgressBar={true} />
+        <ToastContainer autoClose={2000} hideProgressBar={true} />
+
         <Navbar onSelectCategory={handleCategorySelect} />
+
         <div className="min-vh-100 bg-light">
           <Routes>
             <Route
               path="/"
-              element={
-                <Home selectedCategory={selectedCategory} />
-              }
+              element={<Home selectedCategory={selectedCategory} />}
             />
+
+            {/* 🔥 NEW ROUTES */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+
             <Route path="/add_product" element={<AddProduct />} />
             <Route path="/product" element={<Product />} />
             <Route path="product/:id" element={<Product />} />
@@ -44,7 +50,6 @@ function App() {
             <Route path="/product/update/:id" element={<UpdateProduct />} />
             <Route path="/orders" element={<Order />} />
             <Route path="/search-results" element={<SearchResults />} />
-             
           </Routes>
         </div>
       </BrowserRouter>

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import axios from "axios";
+import API from "../axios"; // ✅ FIX
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
@@ -10,12 +10,11 @@ const AddProduct = () => {
     description: "",
     price: "",
     category: "",
-    stockQuantity: "",
+    stockQuantity: "", // ✅ FIX name
     releaseDate: "",
     productAvailable: false,
   });
 
-  const baseUrl = import.meta.env.VITE_BASE_URL;
   const [image, setImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -27,6 +26,7 @@ const AddProduct = () => {
     const { name, value, type, checked } = e.target;
     const fieldValue = type === "checkbox" ? checked : value;
     setProduct({ ...product, [name]: fieldValue });
+
     if (errors[name]) {
       setErrors({ ...errors, [name]: null });
     }
@@ -35,101 +35,93 @@ const AddProduct = () => {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     setImage(file);
+
     if (file) {
       const reader = new FileReader();
       reader.onload = (e) => setImagePreview(e.target.result);
       reader.readAsDataURL(file);
+
       const validTypes = ["image/jpeg", "image/png"];
       if (!validTypes.includes(file.type)) {
-        setErrors({
-          ...errors,
-          image: "Please select a valid image file (JPEG or PNG)",
-        });
+        setErrors({ ...errors, image: "Only JPG/PNG allowed" });
       } else if (file.size > 5 * 1024 * 1024) {
-        setErrors({ ...errors, image: "Image size should be less than 5MB" });
+        setErrors({ ...errors, image: "Max size 5MB" });
       } else {
         setErrors({ ...errors, image: null });
       }
-    } else {
-      setImagePreview(null);
     }
   };
 
   const validateForm = () => {
     const newErrors = {};
-    if (!product.name.trim()) newErrors.name = "Product name is required";
-    if (!product.brand.trim()) newErrors.brand = "Brand is required";
-    if (!product.description.trim())
-      newErrors.description = "Description is required";
+
+    if (!product.name.trim()) newErrors.name = "Required";
+    if (!product.brand.trim()) newErrors.brand = "Required";
+    if (!product.description.trim()) newErrors.description = "Required";
     if (!product.price || parseFloat(product.price) <= 0)
-      newErrors.price = "Price must be greater than zero";
-    if (!product.category) newErrors.category = "Please select a category";
+      newErrors.price = "Invalid";
+    if (!product.category) newErrors.category = "Required";
     if (!product.stockQuantity || parseInt(product.stockQuantity) < 0)
-      newErrors.stockQuantity = "Stock quantity cannot be negative";
-    if (!product.releaseDate)
-      newErrors.releaseDate = "Release date is required";
-    if (!image) newErrors.image = "Product image is required";
+      newErrors.stockQuantity = "Invalid";
+    if (!product.releaseDate) newErrors.releaseDate = "Required";
+    if (!image) newErrors.image = "Required";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const submitHandler = (event) => {
+  const submitHandler = async (event) => {
     event.preventDefault();
-    const form = event.currentTarget;
-    setValidated(true);
-    if (!validateForm() || !form.checkValidity()) {
-      event.stopPropagation();
-      return;
-    }
+
+    if (!validateForm()) return;
 
     setLoading(true);
+
     const formData = new FormData();
     formData.append("imageFile", image);
     formData.append(
       "product",
-      new Blob([JSON.stringify(product)], { type: "application/json" })
+      new Blob([JSON.stringify(product)], { type: "application/json" }),
     );
 
-    axios
-      .post(`${baseUrl}/api/product`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      })
-      .then((response) => {
-        toast.success("Product added successfully");
-        setProduct({
-          name: "",
-          brand: "",
-          description: "",
-          price: "",
-          category: "",
-          stockQuality: "",
-          releaseDate: "",
-          productAvailable: false,
-        });
-        setImage(null);
-        setImagePreview(null);
-        setValidated(false);
-        setErrors({});
-        navigate("/");
-      })
-      .catch((error) => {
-        if (error.response && error.response.data) {
-          setErrors(error.response.data);
-        } else {
-          toast.error("Error adding product");
-        }
-        setLoading(false);
+    try {
+      await API.post("/product", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
       });
+
+      toast.success("Product added ✅");
+
+      setProduct({
+        name: "",
+        brand: "",
+        description: "",
+        price: "",
+        category: "",
+        stockQuantity: "",
+        releaseDate: "",
+        productAvailable: false,
+      });
+
+      setImage(null);
+      setImagePreview(null);
+      setErrors({});
+      navigate("/");
+    } catch (error) {
+      console.error(error);
+      toast.error("Error adding product ❌");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="container mt-5 pt-4">
-      <form noValidate onSubmit={submitHandler} className="row g-4">
+      <form onSubmit={submitHandler} className="row g-4">
         <div className="col-md-6">
           <label>Name</label>
           <input
-            type="text"
             name="name"
             className="form-control"
             value={product.name}
@@ -141,13 +133,11 @@ const AddProduct = () => {
         <div className="col-md-6">
           <label>Brand</label>
           <input
-            type="text"
             name="brand"
             className="form-control"
             value={product.brand}
             onChange={handleInputChange}
           />
-          {errors.brand && <div className="text-danger">{errors.brand}</div>}
         </div>
 
         <div className="col-md-12">
@@ -158,9 +148,6 @@ const AddProduct = () => {
             value={product.description}
             onChange={handleInputChange}
           />
-          {errors.description && (
-            <div className="text-danger">{errors.description}</div>
-          )}
         </div>
 
         <div className="col-md-4">
@@ -172,47 +159,36 @@ const AddProduct = () => {
             value={product.price}
             onChange={handleInputChange}
           />
-          {errors.price && <div className="text-danger">{errors.price}</div>}
         </div>
 
         <div className="col-md-4">
           <label>Category</label>
           <select
+            name="category"
             className="form-select"
             value={product.category}
             onChange={handleInputChange}
-            name="category"
-            id="category"
           >
-            <option value="">Select category</option>
+            <option value="">Select</option>
             <option value="Laptop">Laptop</option>
             <option value="Headphone">Headphone</option>
             <option value="Mobile">Mobile</option>
-            <option value="Electronics">Electronics</option>
-            <option value="Toys">Toys</option>
-            <option value="Fashion">Fashion</option>
           </select>
-          {errors.category && (
-            <div className="text-danger">{errors.category}</div>
-          )}
         </div>
 
         <div className="col-md-4">
-          <label>Stock Quantity</label>
+          <label>Stock</label>
           <input
             type="number"
-            name="stockQuality"
+            name="stockQuantity"
             className="form-control"
-            value={product.stockQuality}
+            value={product.stockQuantity}
             onChange={handleInputChange}
           />
-          {errors.stockQuality && (
-            <div className="text-danger">{errors.stockQuality}</div>
-          )}
         </div>
 
         <div className="col-md-6">
-          <label>Release Date</label>
+          <label>Date</label>
           <input
             type="date"
             name="releaseDate"
@@ -220,22 +196,16 @@ const AddProduct = () => {
             value={product.releaseDate}
             onChange={handleInputChange}
           />
-          {errors.releaseDate && (
-            <div className="text-danger">{errors.releaseDate}</div>
-          )}
         </div>
 
-        <div className="col-md-6 d-flex align-items-center">
-          <div className="form-check">
-            <input
-              className="form-check-input"
-              type="checkbox"
-              name="productAvailable"
-              checked={product.productAvailable}
-              onChange={handleInputChange}
-            />
-            <label className="form-check-label">Product Available</label>
-          </div>
+        <div className="col-md-6">
+          <input
+            type="checkbox"
+            name="productAvailable"
+            checked={product.productAvailable}
+            onChange={handleInputChange}
+          />
+          <label className="ms-2">Available</label>
         </div>
 
         <div className="col-md-12">
@@ -245,18 +215,10 @@ const AddProduct = () => {
             className="form-control"
             onChange={handleImageChange}
           />
-          {errors.image && <div className="text-danger">{errors.image}</div>}
-          {imagePreview && (
-            <img
-              src={imagePreview}
-              alt="Preview"
-              style={{ maxWidth: "150px", marginTop: "10px" }}
-            />
-          )}
         </div>
 
         <div className="col-12 text-center">
-          <button type="submit" className="btn btn-primary">
+          <button className="btn btn-primary">
             {loading ? "Adding..." : "Add Product"}
           </button>
         </div>
